@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gitops-portfolio-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Tao-68/aws-eks-gitops-deployment-playground.git
+    targetRevision: main
+    path: k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gitops-portfolio
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitops-portfolio-app
+  namespace: gitops-portfolio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitops-portfolio-app
+  template:
+    metadata:
+      labels:
+        app: gitops-portfolio-app
+    spec:
+      containers:
+        - name: app
+          image: 183863150470.dkr.ecr.eu-central-1.amazonaws.com/gitops-portfolio-app:latest
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+          # Small requests/limits: the single t3.small node's 2GB RAM is
+          # already shared with ArgoCD, CoreDNS, and kube-proxy.
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
