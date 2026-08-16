@@ -82,9 +82,11 @@ resource "aws_eks_node_group" "main" {
   node_role_arn   = aws_iam_role.eks_nodes.arn
   subnet_ids      = aws_subnet.private[*].id
 
-  # Spot over On-Demand: ~70% cheaper, and interruption risk is a non-issue
-  # for a demo cluster with no real traffic to protect.
-  capacity_type  = "SPOT"
+  # On-Demand for now: staying conservative while recovering from the
+  # instance-type restriction outage (see node_instance_type). t3.small is
+  # allowlisted for both Spot and On-Demand on this account, so Spot could be
+  # revisited later as a separate cost optimization once things are stable.
+  capacity_type  = "ON_DEMAND"
   instance_types = [var.node_instance_type]
 
   scaling_config {
