@@ -59,6 +59,12 @@ sudo chown -R dev:dev /home/dev/.ssh
 sudo chmod 700 /home/dev/.ssh
 sudo chmod 600 /home/dev/.ssh/authorized_keys
 ```
+- `700` on the `.ssh` directory meaning the owner can list, create files in, and cd into it. For a directory, `x` means "allowed to enter/traverse it," which is why it's required even though no folder is being executed.
+- `600` on `authorized_keys` because a regular file like this is just data, never run as a program.
+- [Here](https://oneuptime.com/blog/post/2026-03-02-how-to-understand-linux-file-permissions-rwx-on-ubuntu/view) to read more. 
+
+Note: OpenSSH `sshd` refuses to trust `authorized_keys` if the file or its parent directory is writable by anyone other than the owner. This exists because on a shared system, if group/others could write to your `.ssh` folder, another user could plant their own public key in your authorized_keys and log in as you. For example if the user is logging in as `dev`, the `.ssh` folder may only be written by `dev`. 
+
 
 ## SSH Configuration (Part 2): 
 _Configure the server to disable password-based authentication._
