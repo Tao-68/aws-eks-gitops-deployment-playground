@@ -3,6 +3,7 @@ output "aws_region" {
   value       = var.aws_region
 }
 
+/*
 output "vpc_id" {
   description = "ID of the VPC."
   value       = aws_vpc.main.id
@@ -57,3 +58,9 @@ output "ecr_repository_url" {
   description = "URL of the ECR repository for the sample app image."
   value       = aws_ecr_repository.app.repository_url
 }
+
+output "github_actions_role_arn" {
+  description = "IAM role ARN for GitHub Actions to assume via OIDC. Set this as the AWS_ROLE_ARN repository variable (Settings > Secrets and variables > Actions > Variables)."
+  value       = aws_iam_role.github_actions.arn
+}
+*/
