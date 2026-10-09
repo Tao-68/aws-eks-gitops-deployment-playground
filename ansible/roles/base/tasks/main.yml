@@ -1,0 +1,31 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/base
+
+- name: Run the equivalent of "apt-get update" as a separate step
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Upgrade the OS (apt-get dist-upgrade)
+  ansible.builtin.apt:
+    upgrade: dist
+
+
+- name: Install useful utilities
+  ansible.builtin.apt:
+    name: 
+      - vim
+      - git
+      - curl
+    state: present
+
+- name: Install fail2ban
+  ansible.builtin.package:
+    name: "{{ fail2ban_packages }}"
+    state: present
+
+- name: Start and enable fail2ban
+  ansible.builtin.systemd:
+    name: "{{ fail2ban_service }}"
+    state: started
+    enabled: true

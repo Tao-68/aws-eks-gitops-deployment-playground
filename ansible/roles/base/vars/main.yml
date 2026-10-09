@@ -1,0 +1,7 @@
+#SPDX-License-Identifier: MIT-0
+---
+# vars file for roles/base
+fail2ban_packages:
+  - fail2ban
+
+fail2ban_service: fail2ban
