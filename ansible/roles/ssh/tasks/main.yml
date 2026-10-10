@@ -1,0 +1,14 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/ssh
+- name: Ensure target user account exists
+  ansible.builtin.user:
+    name: "{{ ssh_target_user }}"
+    state: present
+    shell: /bin/bash
+
+- name: Add authorized key for target user
+  ansible.posix.authorized_key:
+    user: "{{ ssh_target_user }}"
+    state: present
+    key: "{{ ssh_public_key }}"

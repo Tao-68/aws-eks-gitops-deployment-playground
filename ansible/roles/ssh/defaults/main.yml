@@ -1,0 +1,5 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for roles/ssh
+ssh_target_user: newuser
+ssh_public_key: "override with the real public key content or a lookup"
