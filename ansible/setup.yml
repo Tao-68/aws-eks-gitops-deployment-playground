@@ -1,0 +1,13 @@
+- name: ansible-playbook setup.yml
+  hosts: myhosts 
+  become: true
+  roles:
+    - base
+    - nginx
+    - app
+    - ssh
+  tags:
+    - base
+    - nginx
+    - app
+    - ssh
