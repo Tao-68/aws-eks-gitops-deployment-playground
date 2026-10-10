@@ -1,0 +1,32 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/nginx
+- name: Install nginx
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Deploy nginx site configuration
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/static-site
+  notify: Restart nginx
+
+- name: Enable nginx site configuration
+  file:
+    src: /etc/nginx/sites-available/static-site
+    dest: /etc/nginx/sites-enabled/static-site
+    state: link
+  notify: Restart nginx
+
+- name: Remove default nginx configuration
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Ensure nginx is running
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes
