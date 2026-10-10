@@ -1,0 +1,19 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/app
+- name: Ensure /var/www/static-site directory exists
+  ansible.builtin.file:
+    path: /var/www/static-site
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Unpack local archive
+  ansible.builtin.unarchive:
+    src: static-site.tar.gz
+    dest: /var/www/static-site
+    remote_src: no
+    owner: www-data
+    group: www-data
+    mode: '0755'
