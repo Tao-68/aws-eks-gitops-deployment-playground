@@ -395,6 +395,8 @@ ansible-playbook -i inventory.ini setup.yml --ask-vault-pass --tags ssh \
 ```
 Result: `ok=1`, no `changed` — confirming both that the role works, and that `dev`'s key was already correctly present from the Project 1 setup (idempotence correctly detected nothing needed to change, rather than adding a duplicate entry).
 
+`newuser` was created while testing the `ssh` role and still accepted the personal key. Removed on the server with `sudo deluser --remove-home newuser`.
+
 ## Finalizing `setup.yml`
 ```bash
 - name: ansible-playbook setup.yml
