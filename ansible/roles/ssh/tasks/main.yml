@@ -3,12 +3,31 @@
 # tasks file for roles/ssh
 - name: Ensure target user account exists
   ansible.builtin.user:
-    name: "{{ ssh_target_user }}"
+    name: "{{ item.name }}"
     state: present
     shell: /bin/bash
+    groups: sudo
+    append: true
+  loop: "{{ ssh_users }}"
 
 - name: Add authorized key for target user
   ansible.posix.authorized_key:
-    user: "{{ ssh_target_user }}"
+    user: "{{ item.name }}"
     state: present
-    key: "{{ ssh_public_key }}"
+    key: "{{ item.key }}"
+  loop: "{{ ssh_users }}"
+
+- name: Disable root login and password authentication
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/10-hardening.conf
+    owner: root
+    group: root
+    mode: '0644'
+    validate: /usr/sbin/sshd -t -f %s
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      PubkeyAuthentication yes
+  notify: Restart ssh
+
+

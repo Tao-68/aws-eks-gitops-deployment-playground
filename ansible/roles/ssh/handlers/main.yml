@@ -1,0 +1,7 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for roles/ssh
+- name: Restart ssh
+  systemd:
+    name: ssh
+    state: restarted
