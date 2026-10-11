@@ -1,3 +1,5 @@
+inventory.ini
+
 # Local .terraform directories
 .terraform/
 .tofu/
