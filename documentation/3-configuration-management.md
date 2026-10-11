@@ -401,15 +401,14 @@ Result: `ok=1`, no `changed` — confirming both that the role works, and that `
   hosts: myhosts
   become: true
   roles:
-    - base
-    - nginx
-    - app
-    - ssh
-  tags:
-    - base
-    - nginx
-    - app
-    - ssh
+    - role: base
+      tags: base
+    - role: nginx
+      tags: nginx
+    - role: app
+      tags: app
+    - role: ssh
+      tags: ssh
 ```
 The longer dict form is still needed if a role requires extra parameters (e.g. a *custom* tag differing from the role's own name, or `vars:` scoped to just that role inclusion).
 
