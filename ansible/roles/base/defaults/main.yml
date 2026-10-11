@@ -1,3 +1,5 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # defaults file for roles/base
+fail2ban_ignoreip: "127.0.0.1/8 ::1"
+timezone: "Europe/Berlin"

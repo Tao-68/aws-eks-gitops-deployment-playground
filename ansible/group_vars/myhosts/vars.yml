@@ -1,1 +1,7 @@
 ansible_become_exe: /usr/bin/sudo.ws
+
+ssh_users:
+  - name: dev
+    key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO/9prC/hzmXmH5WK8uxF4SvSAnTsEVSSaY/F0Lwoa6G devops-playground"
+  - name: ansible
+    key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBSLsnb3j5lMIJ0UFRgCDn60e0EKNhbV9LIa4Ljb3aHL ansible-key"
