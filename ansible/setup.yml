@@ -2,12 +2,11 @@
   hosts: myhosts 
   become: true
   roles:
-    - base
-    - nginx
-    - app
-    - ssh
-  tags:
-    - base
-    - nginx
-    - app
-    - ssh
+    - role: base
+      tags: base
+    - role: nginx
+      tags: nginx
+    - role: app
+      tags: app
+    - role: ssh
+      tags: ssh
