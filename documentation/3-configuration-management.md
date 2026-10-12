@@ -188,7 +188,7 @@ roles/base/
   tests/
 ```
 
-**Note: The automated file generation is convenient but it creates also many unecessary files. Most files that would be used are under `/tasks` and maybe `/defaults` and `/vars`. However it is good to know that such a command exists.**
+**Note: The automated file generation is convenient but it creates also many unecessary file (only base will remain with this structure as an example). Most files that would be used are under `/tasks` and maybe `/defaults` and `/vars`. However it is good to know that such a command exists.**
 
 ## First role: `base`
 *Basic server setup (installs utilities, updates the server, installs `fail2ban`, etc.)*
