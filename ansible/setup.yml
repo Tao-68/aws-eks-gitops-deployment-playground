@@ -4,9 +4,21 @@
   roles:
     - role: base
       tags: base
+    - role: ssh
+      tags: ssh
+
+- name: ansible-playbook app setup.yml
+  hosts: app
+  become: true
+  roles:
     - role: nginx
       tags: nginx
     - role: app
       tags: app
-    - role: ssh
-      tags: ssh
+
+- name: ansible-playbook wireguard setup.yml
+  hosts: bastion
+  become: true
+  roles:
+    - role: wireguard
+      tags: wireguard
