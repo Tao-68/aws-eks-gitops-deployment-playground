@@ -50,6 +50,9 @@ I created the user `dev` using `sudo adduser dev` and provided a password for it
 
 Using `sudo usermod -aG sudo dev` to provide user with admin acceess and validate this step using the command `groups dev`, the output should be `dev : dev sudo users`. 
 
+- `-a`: Amend the changes to the existing configuration
+- `-G`: The name of the group the user should be added to
+
 Then copy the public key to the new user.
 
 ```bash
