@@ -2,3 +2,4 @@
 ---
 # defaults file for roles/ssh
 ssh_users: []
+ssh_mfa_enabled: false
