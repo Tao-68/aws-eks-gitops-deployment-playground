@@ -62,10 +62,6 @@
   community.general.timezone:
     name: "{{ timezone }}"
 
-- name: Set hostname
-  ansible.builtin.hostname:
-    name: "{{ server_hostname }}"
-
 - name: Set hostname in /etc/hosts
   ansible.builtin.lineinfile:
     path: /etc/hosts
@@ -77,6 +73,10 @@
     path: /etc/hosts
     regexp: '^127\.0\.0\.1'
     line: "127.0.0.1 localhost"
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ server_hostname }}"
 
 - name: Configure unattended-upgrades configuration
   ansible.builtin.copy:
