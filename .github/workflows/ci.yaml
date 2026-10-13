@@ -1,0 +1,74 @@
+# name: Build and deploy app
+
+# # Only paths under app/ trigger this -- an infra-only change to iac/ shouldn't
+# # rebuild and redeploy the app image. The job's own commit (which only
+# # touches k8s/deployment.yaml) also isn't in this path filter, so it can't
+# # retrigger itself into a loop.
+
+# on:
+#   push:
+#     branches: [main]
+#     paths:
+#       - "app/**"
+#       - ".github/workflows/ci.yaml"
+
+# # id-token: write is what lets this workflow request an OIDC token and
+# # assume the AWS role -- without it, configure-aws-credentials has nothing
+# # to federate with. contents: write is needed for the commit-back step.
+# permissions:
+#   id-token: write
+#   contents: write
+
+# env:
+#   AWS_REGION: eu-central-1
+#   ECR_REPOSITORY: gitops-portfolio-app
+
+# jobs:
+#   build-and-deploy:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+
+#       # No AWS keys anywhere: this exchanges GitHub's OIDC token for
+#       # short-lived AWS credentials via the IAM role defined in
+#       # iac/github-oidc.tf, scoped to this repo's main branch only.
+#       - name: Configure AWS credentials via OIDC
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+#           aws-region: ${{ env.AWS_REGION }}
+
+#       - name: Login to ECR
+#         id: ecr-login
+#         uses: aws-actions/amazon-ecr-login@v2
+
+#       # Tagged with the commit SHA, not `latest` -- a floating tag wouldn't
+#       # change the manifest text below, so ArgoCD would never see a diff to
+#       # sync (see learnings.md for the failure mode this avoids).
+#       - name: Build and push image
+#         id: build
+#         env:
+#           REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+#           IMAGE_TAG: ${{ github.sha }}
+#         run: |
+#           docker build -t "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" ./app
+#           docker push "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+#           echo "image=$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+#       - name: Bump image tag in k8s manifest
+#         run: |
+#           sed -i "s|image: .*${ECR_REPOSITORY}:.*|image: ${{ steps.build.outputs.image }}|" k8s/deployment.yaml
+
+#       # Direct push to main, since this repo has no branch-protection/PR
+#       # gate on it yet. In an org that requires PR review before main
+#       # changes, this step would open a PR instead of pushing straight to
+#       # main -- the promotion-via-PR pattern discussed in learnings.md.
+#       - name: Commit and push manifest update
+#         run: |
+#           git config user.name "github-actions[bot]"
+#           git config user.email "github-actions[bot]@users.noreply.github.com"
+#           git add k8s/deployment.yaml
+#           git diff --cached --quiet && echo "No changes to commit" && exit 0
+#           git commit -m "Deploy ${{ github.sha }} to gitops-portfolio-app"
+#           git push
