@@ -4,11 +4,14 @@
 - name: Ensure target user account exists
   ansible.builtin.user:
     name: "{{ item.name }}"
+    password: "{{ ssh_user_passwords[item.name] | password_hash('sha512') }}"
+    update_password: on_create
     state: present
     shell: /bin/bash
     groups: sudo
     append: true
   loop: "{{ ssh_users }}"
+  no_log: true
 
 - name: Add authorized key for target user
   ansible.posix.authorized_key:
@@ -16,6 +19,14 @@
     state: present
     key: "{{ item.key }}"
   loop: "{{ ssh_users }}"
+
+- name: Create /run/sshd directory
+  ansible.builtin.file:
+    path: /run/sshd
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Disable root login and password authentication
   ansible.builtin.copy:
@@ -30,4 +41,45 @@
       PubkeyAuthentication yes
   notify: Restart ssh
 
+- name: Install libpam-google-authenticator
+  ansible.builtin.apt:
+    name: libpam-google-authenticator
+    state: present
+  when: ssh_mfa_enabled
 
+- name: stop the login system asking for the account password
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/sshd
+    regexp: '^#?@include common-auth'
+    line: '#@include common-auth'
+  when: ssh_mfa_enabled
+
+- name: Request MFA token for SSH login
+  ansible.builtin.blockinfile:
+    path: /etc/pam.d/sshd
+    insertafter: '^#@include common-auth'
+    block: |
+      auth required pam_google_authenticator.so nullok
+      auth required pam_permit.so
+  when: ssh_mfa_enabled
+
+- name: Configure sshd to use MFA
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/20-mfa.conf
+    owner: root
+    group: root
+    mode: '0644'
+    validate: /usr/sbin/sshd -t -f %s
+    content: |
+      KbdInteractiveAuthentication yes
+      AuthenticationMethods publickey,keyboard-interactive
+
+      Match User ansible
+          AuthenticationMethods publickey
+  notify: Restart ssh
+  when: ssh_mfa_enabled
+
+- name: Test sshd config before restarting
+  ansible.builtin.command: /usr/sbin/sshd -t
+  changed_when: false
+  when: ssh_mfa_enabled
