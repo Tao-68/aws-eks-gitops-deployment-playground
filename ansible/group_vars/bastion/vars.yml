@@ -1,0 +1,8 @@
+ssh_mfa_enabled: true
+wireguard_peers:
+  - name: pc-wsl
+    public_key: "WlOkCTW5o38QqcFNK8I3kR/GQqlyhTGk612itg3wpFQ="
+    address: 10.8.0.2
+  - name: phone
+    public_key: "QhoPOGapbAt2iQZkfaxVKTuNLAqkx+4lK7E8oMPIXD0="
+    address: 10.8.0.3
