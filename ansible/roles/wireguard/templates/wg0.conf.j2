@@ -1,0 +1,19 @@
+[Interface]
+Address = {{ wireguard_address }}
+ListenPort = {{ wireguard_port }}
+MTU = 1420
+PostUp = wg set %i private-key /etc/wireguard/server.key
+PostUp = iptables -I FORWARD -i %i -j ACCEPT
+PostUp = iptables -I FORWARD -o %i -j ACCEPT
+PostUp = iptables -t nat -A POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -j ACCEPT
+PostDown = iptables -D FORWARD -o %i -j ACCEPT
+PostDown = iptables -t nat -D POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE
+
+{% for peer in wireguard_peers %}
+[Peer]
+# {{ peer.name }}
+PublicKey = {{ peer.public_key }}
+AllowedIPs = {{ peer.address }}/32
+
+{% endfor %}

@@ -1,0 +1,42 @@
+- name: Install WireGuard 
+  ansible.builtin.apt:
+    name: wireguard
+    state: present
+
+- name: Allow forwarding in sysctl
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_file: /etc/sysctl.d/99-wireguard.conf
+    reload: yes
+  
+- name: Generate the server private key
+  ansible.builtin.shell: umask 077 && wg genkey > /etc/wireguard/server.key
+  args:
+    creates: /etc/wireguard/server.key
+
+- name: Derive the server public key
+  ansible.builtin.shell: wg pubkey < /etc/wireguard/server.key > /etc/wireguard/server.pub
+  args:
+    creates: /etc/wireguard/server.pub
+
+- name: Deploy the WireGuard configuration file
+  ansible.builtin.template:
+    src: wg0.conf.j2
+    dest: /etc/wireguard/wg0.conf
+    owner: root
+    group: root
+    mode: '0600'
+  notify: Restart wireguard
+
+- name: Open the WireGuard port in the firewall
+  community.general.ufw:
+    rule: allow
+    port: "{{ wireguard_port }}"
+    proto: udp
+
+- name: Start and enable the WireGuard service
+  ansible.builtin.systemd:
+    name: wg-quick@wg0
+    enabled: yes
+    state: started
