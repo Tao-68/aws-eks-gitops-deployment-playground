@@ -3,6 +3,16 @@ output "aws_region" {
   value       = var.aws_region
 }
 
+output "bastion_public_ip" {
+  description = "Public IP of the bastion host."
+  value       = aws_instance.bastion.public_ip
+}
+
+output "server_private_ip" {
+  description = "Private IP of the devops-playground-server instance."
+  value       = aws_instance.devops-playground-server.private_ip
+}
+
 /*
 output "vpc_id" {
   description = "ID of the VPC."

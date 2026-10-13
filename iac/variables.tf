@@ -4,6 +4,10 @@ variable "aws_region" {
   default     = "eu-central-1"
 }
 
+variable "admin_cidr" {
+  description = "CIDR block for admin access to the EC2 instance."
+  type        = string
+}
 
 variable "node_instance_type" {
   description = "EC2 instance type for the EKS managed node group."
