@@ -7,6 +7,10 @@ app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
 
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 app.listen(port, host, () => {
   console.log(`Server is running on http://${host}:${port}`);
 });
