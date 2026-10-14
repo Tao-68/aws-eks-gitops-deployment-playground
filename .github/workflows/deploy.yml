@@ -1,0 +1,65 @@
+name: Deploy app
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: main
+    timeout-minutes: 10
+    steps:
+      - name: Install WireGuard
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq wireguard-tools
+
+      - name: Connect to the VPN
+        env:
+          WG_PRIVATE_KEY: ${{ secrets.WG_PRIVATE_KEY }}
+        run: |
+          printf '%s\n' "$WG_PRIVATE_KEY" | sudo tee /etc/wireguard/runner.key > /dev/null
+          sudo chmod 600 /etc/wireguard/runner.key
+          sudo tee /etc/wireguard/wg0.conf > /dev/null <<EOF
+          [Interface]
+          Address = 10.8.0.4/32
+          PostUp = wg set %i private-key /etc/wireguard/runner.key
+
+          [Peer]
+          PublicKey = ${{ vars.WG_SERVER_PUBLIC_KEY }}
+          Endpoint = ${{ vars.WG_ENDPOINT }}
+          AllowedIPs = 172.31.0.0/16
+          PersistentKeepalive = 25
+          EOF
+          sudo wg-quick up wg0
+
+      - name: Set up SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          APP_KNOWN_HOSTS: ${{ secrets.APP_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$APP_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            deploy@${{ vars.APP_HOST }} \
+            "sudo /usr/local/bin/deploy-playground-app ${{ github.sha }}"
+
+      - name: Disconnect from the VPN
+        if: always()
+        run: sudo wg-quick down wg0 || true
