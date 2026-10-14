@@ -83,3 +83,16 @@
   ansible.builtin.command: /usr/sbin/sshd -t
   changed_when: false
   when: ssh_mfa_enabled
+
+- name: Remove the default ubuntu account
+  ansible.builtin.user:
+    name: ubuntu
+    state: absent
+    remove: true
+  when: ansible_user != 'ubuntu'
+
+- name: Remove the ubuntu sudo rule
+  ansible.builtin.file:
+    path: /etc/sudoers.d/90-cloud-init-users
+    state: absent
+  when: ansible_user != 'ubuntu'
