@@ -1,0 +1,5 @@
+- name: Restart app
+  ansible.builtin.systemd:
+    name: "playground-app"
+    state: restarted
+    daemon_reload: yes
