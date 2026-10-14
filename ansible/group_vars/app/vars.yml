@@ -1,2 +1,3 @@
 fail2ban_ignoreip: "127.0.0.1/8 ::1 172.31.26.130"
 app_port: 3000
+deploy_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL+2Yu0Q51gRj/565o2gcLbu270iB2DtOe4rIGFwgEvO github-actions-deploy"
