@@ -1,0 +1,28 @@
+#!/bin/bash
+set -euo pipefail
+
+commit="${1:-}"
+if [[ ! "$commit" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "usage: deploy-playground-app <40-character commit id>" >&2
+  exit 1
+fi
+
+cd {{ app_root }}
+runuser -u {{ app_user }} -- git fetch --quiet origin
+runuser -u {{ app_user }} -- git checkout --quiet --detach "$commit"
+
+cd {{ app_dir }}
+runuser -u {{ app_user }} -- npm ci --omit=dev --silent
+
+systemctl restart playground-app
+
+for attempt in 1 2 3 4 5; do
+  if curl -fsS http://127.0.0.1:{{ app_port }}/health > /dev/null; then
+    echo "deployed $commit"
+    exit 0
+  fi
+  sleep 2
+done
+
+echo "health check failed after deploying $commit" >&2
+exit 1
