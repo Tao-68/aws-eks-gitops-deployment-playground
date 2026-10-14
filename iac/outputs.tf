@@ -13,6 +13,10 @@ output "server_private_ip" {
   value       = aws_instance.devops-playground-server.private_ip
 }
 
+output "server_public_ip" {
+  description = "Public IP of the devops-playground-server instance."
+  value       = aws_instance.devops-playground-server.public_ip
+}
 /*
 output "vpc_id" {
   description = "ID of the VPC."
