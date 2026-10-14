@@ -1,0 +1,14 @@
+[Unit]
+Description=Playground Node.js app
+After=network.target
+
+[Service]
+User={{ app_user }}
+WorkingDirectory={{ app_dir }}
+Environment=PORT={{ app_port }}
+Environment=HOST=127.0.0.1
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
