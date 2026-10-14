@@ -6,3 +6,6 @@ wireguard_peers:
   - name: phone
     public_key: "QhoPOGapbAt2iQZkfaxVKTuNLAqkx+4lK7E8oMPIXD0="
     address: 10.8.0.3
+  - name: github-actions
+    public_key: "nXOjaPwscQh2AN1vKz2mbmyuWNzZyseorjeHZzHcOSQ="
+    address: 10.8.0.4
