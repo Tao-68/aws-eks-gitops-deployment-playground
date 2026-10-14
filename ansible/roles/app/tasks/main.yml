@@ -81,3 +81,34 @@
   ansible.builtin.file:
     path: /var/www/static-site
     state: absent
+
+# Github Actions Deployment
+- name: Create the deploy account
+  ansible.builtin.user:
+    name: deploy
+    shell: /bin/bash
+    create_home: true
+
+- name: Authorise the deploy key
+  ansible.posix.authorized_key:
+    user: deploy
+    key: "{{ deploy_public_key }}"
+    state: present
+
+- name: Install the deploy command
+  ansible.builtin.template:
+    src: deploy-playground-app.j2
+    dest: /usr/local/bin/deploy-playground-app
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Allow deploy to run only the deploy command as root
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/deploy
+    content: "deploy ALL=(root) NOPASSWD: /usr/local/bin/deploy-playground-app\n"
+    owner: root
+    group: root
+    mode: '0440'
+    validate: /usr/sbin/visudo -c -f %s
+
