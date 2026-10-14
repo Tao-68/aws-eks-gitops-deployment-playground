@@ -30,3 +30,9 @@
     name: nginx
     state: started
     enabled: yes
+
+- name: Ensure nginx is listening on port 80
+  community.general.ufw:
+    rule: allow
+    port: 80
+    proto: tcp
