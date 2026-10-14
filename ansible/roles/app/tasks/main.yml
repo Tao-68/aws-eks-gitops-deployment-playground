@@ -1,19 +1,62 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # tasks file for roles/app
-- name: Ensure /var/www/static-site directory exists
+# - name: Ensure /var/www/static-site directory exists
+#   ansible.builtin.file:
+#     path: /var/www/static-site
+#     state: directory
+#     owner: www-data
+#     group: www-data
+#     mode: '0755'
+
+# - name: Unpack local archive
+#   ansible.builtin.unarchive:
+#     src: static-site.tar.gz
+#     dest: /var/www/static-site
+#     remote_src: no
+#     owner: www-data
+#     group: www-data
+#     mode: '0755'
+
+- name: Install Node.js and npm
+  ansible.builtin.apt:
+    name:
+      - nodejs
+      - npm
+    state: present
+
+- name: Create the app account
+  ansible.builtin.user:
+    name: "{{ app_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: /var/lib/{{ app_user }}
+    create_home: true
+
+- name: Create the app folder
   ansible.builtin.file:
-    path: /var/www/static-site
+    path: "{{ app_root }}"
     state: directory
-    owner: www-data
-    group: www-data
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
     mode: '0755'
 
-- name: Unpack local archive
-  ansible.builtin.unarchive:
-    src: static-site.tar.gz
-    dest: /var/www/static-site
-    remote_src: no
-    owner: www-data
-    group: www-data
-    mode: '0755'
+- name: Get the code from GitHub
+  ansible.builtin.git:
+    repo: "{{ app_repo }}"
+    dest: "{{ app_root }}"
+    version: "{{ app_version }}"
+  become_user: "{{ app_user }}"
+  register: app_clone
+
+- name: Check whether dependencies are installed
+  ansible.builtin.stat:
+    path: "{{ app_dir }}/node_modules"
+  register: app_modules
+
+- name: Install dependencies
+  ansible.builtin.command: npm ci --omit=dev
+  args:
+    chdir: "{{ app_dir }}"
+  become_user: "{{ app_user }}"
+  when: app_clone.changed or not app_modules.stat.exists
