@@ -48,6 +48,7 @@
     version: "{{ app_version }}"
   become_user: "{{ app_user }}"
   register: app_clone
+  notify: Restart app
 
 - name: Check whether dependencies are installed
   ansible.builtin.stat:
@@ -60,3 +61,23 @@
     chdir: "{{ app_dir }}"
   become_user: "{{ app_user }}"
   when: app_clone.changed or not app_modules.stat.exists
+  notify: Restart app
+
+- name: Deploy the unit file for the app
+  ansible.builtin.template:
+    src: playground-app.service.j2
+    dest: /etc/systemd/system/playground-app.service
+    mode: '0644'
+  notify: Restart app
+
+- name: Start and enable the app service
+  ansible.builtin.systemd:
+    name: playground-app
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Remove old static site files
+  ansible.builtin.file:
+    path: /var/www/static-site
+    state: absent
