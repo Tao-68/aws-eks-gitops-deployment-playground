@@ -1,0 +1,6 @@
+app_repo: https://github.com/Tao-68/aws-eks-gitops-deployment-playground.git
+app_version: main
+app_user: nodeapp
+app_root: /opt/playground
+app_dir: "{{ app_root }}/app"
+app_port: 3000
