@@ -420,3 +420,13 @@ All four roles (`base`, `nginx`, `app`, `ssh`) are written, tested individually 
 
 **Known open item carried forward:** state remains local (no S3 backend) for the IaC work in Project 2 — noted there as a deferred follow-up, not specific to this project.
 
+
+## Architecture at the end of this phase
+
+![Architecture after phase 3](diagrams/3-configuration-management.drawio.svg)
+
+| Perspective | At this point |
+|---|---|
+| Visitor | Nothing is public. nginx answers only on the server itself, because port 80 is closed in both the security group and UFW. |
+| Developer | The "app" is a static `index.html`, packed into a tarball inside the `app` role and uploaded by Ansible. |
+| Admin | By hand as `dev`, and automated with Ansible as the separate `ansible` account. |
