@@ -123,4 +123,30 @@ OpenTofu has compared your real infrastructure against your configuration and fo
 
 *After the import, the import block in script could be kept, commented out or removed as it is harmless.*
 
-**To do**: Migration of states to a S3 backend to reflect enterprise practicality. 
+**Done later**: the state was moved to an S3 backend. See `2.2-remote-state-s3.md`. 
+
+## Architecture at the end of this phase
+
+![Architecture at the end of phase 2](diagrams/2-IaC-import-with-opentofu.drawio.svg)
+
+
+The AWS side has two different things to talk to. **The server** is the machine itself, reached over SSH to work inside it. **The EC2 API** is AWS's management service, reached over HTTPS to create, change or describe servers from the outside, the same thing the web console uses behind the scenes. `ssh` talks to the first, `tofu` only ever to the second.
+
+| Perspective | At this point |
+|---|---|
+| Visitor | Nothing is public. |
+| Developer | No application yet. |
+| Admin | Still SSH by hand as `dev`. New: OpenTofu, which talks to AWS's API rather than to the server. The existing instance was imported, so OpenTofu now tracks it, but nothing on the server changed. |
+
+**Two different credentials.** The SSH key `devops-playground` is still how I log in to the server, unchanged from Project 1. OpenTofu does not use it at all. It never connects to the server. It calls AWS's API with the access key of the IAM user `tofu-cli`, set up with `aws configure`.
+
+**The state, kept locally at this point.** The state is OpenTofu's record of which AWS object belongs to which resource in the config. With no backend configured, OpenTofu keeps it in two files in `iac/`:
+
+| File | Created | Updated | Holds |
+|---|---|---|---|
+| `terraform.tfstate` | The first time OpenTofu wrote state, at the import apply | By every command that changes state, such as `apply` and imports | The current state |
+| `terraform.tfstate.backup` | Automatically, the first time the state file was overwritten | Every time the state file is overwritten | The previous version, from just before the last change |
+
+OpenTofu never simply overwrites the state file. Before writing a new version, it saves the old one as `.backup`, so there is always one step of history to roll back to if a write goes wrong: copying the backup over `terraform.tfstate` restores the previous state. It is only one step, though. An older version is gone after the next change. Both files are plain text, kept out of the repo by `.gitignore`. The name `terraform` is kept for compatibility, since OpenTofu began as a fork of Terraform.
+
+This was later replaced by an S3 backend, whose versioning keeps every earlier version instead of one (see `2.2-remote-state-s3.md`).
