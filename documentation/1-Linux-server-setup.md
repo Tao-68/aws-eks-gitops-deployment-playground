@@ -245,3 +245,19 @@ Some key files in output to know :
 - `auth.log`: all authentication attempts (SSH logins, sudo usage)
 - `syslog`: general system messages
 - `fail2ban.log`: Fail2Ban activity
+
+## Architecture at the end of this phase
+
+Three perspectives are tracked at the end of every phase:
+
+- **Visitor:** someone using the app over the internet.
+- **Developer:** someone working on the app's code.
+- **Admin:** someone operating the servers, by hand or through automation.
+
+![Architecture at the end of phase 1](diagrams/1-linux-server-setup.drawio.svg)
+
+| Perspective | At this point |
+|---|---|
+| Visitor | Nothing is public. The only open port is SSH, and only for my address. |
+| Developer | No application yet. |
+| Admin | SSH from my PC as `dev`, with the `devops-playground` key. Everything on the server was set up by hand. |
