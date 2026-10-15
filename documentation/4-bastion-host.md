@@ -200,6 +200,8 @@ Host app
 
 `ProxyJump bastion` means "to reach `app`, first connect to `bastion` and tunnel through it". Both logins use the key on my laptop. The key is never copied to the bastion. The app server is addressed by its private address, which does not change when the instance restarts.
 
+**Why `ssh app` asks for the passphrase twice.** With `ProxyJump` the PC makes two separate logins, one to the bastion and one to the app server through it, and each uses the key. Unless the key is already unlocked in the ssh-agent, `ssh` decrypts the key file each time and asks each time. `ssh bastion` is one login, so it asks once. Loading the key with `ssh-add ~/.ssh/devops-playground`, or adding `AddKeysToAgent yes` at the top of `~/.ssh/config`, leaves only the MFA code.
+
 ```bash
 ssh bastion
 ssh app
@@ -403,3 +405,13 @@ The undo, from an open session, would have been to delete `/etc/ssh/sshd_config.
 ### More granular traffic filtering
 
 From the roadmap's stretch goals. One candidate: restrict UFW on the app server to SSH from inside the VPC only, as a second layer behind the security group.
+
+## Architecture at the end of this phase
+
+![Architecture after phase 4](diagrams/4-bastion-host.drawio.svg)
+
+| Perspective | At this point |
+|---|---|
+| Visitor | Nothing is public. |
+| Developer | Unchanged: the static site. |
+| Admin | Every login to the app server goes through the bastion, by hand or with Ansible. Direct SSH to the app server was removed. The bastion was built only by the roles, from an empty image. The default `ubuntu` account still existed on both servers at this point. It was removed in the service deployment phase. |
