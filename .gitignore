@@ -1,3 +1,7 @@
+# Docker 
+.env
+
+# Ansible inventory file
 inventory.ini
 
 # Local .terraform directories
