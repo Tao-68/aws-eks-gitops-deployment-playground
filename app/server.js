@@ -38,7 +38,7 @@ app.get('/secret', basicAuth, (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('Good Morning World! (おはようせかい)');
+  res.send('Good Morning World! (おはようせかい) - Gyaru');
 });
 
 app.get('/health', (req, res) => {
