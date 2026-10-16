@@ -78,10 +78,17 @@ jobs:
           printf '%s\n' "$APP_KNOWN_HOSTS" > ~/.ssh/known_hosts
 
       - name: Deploy
+        env:
+          IMAGE: ${{ needs.build.outputs.image }}
+          SECRET_MESSAGE: ${{ secrets.SECRET_MESSAGE }}
+          APP_USERNAME: ${{ secrets.APP_USERNAME }}
+          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
         run: |
+          printf 'SECRET_MESSAGE=%s\nUSERNAME=%s\nPASSWORD=%s\n' \
+            "$SECRET_MESSAGE" "$APP_USERNAME" "$APP_PASSWORD" |
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             deploy@${{ vars.APP_HOST }} \
-            "sudo /usr/local/bin/deploy-playground-app ${{ github.sha }}"
+            "sudo /usr/local/bin/deploy-playground-app $IMAGE --settings-from-stdin"
 
       - name: Disconnect from the VPN
         if: always()
