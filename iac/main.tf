@@ -13,6 +13,9 @@ resource "aws_instance" "devops-playground-server" {
   key_name               = "devops-playground"
   subnet_id              = "subnet-09b78eb100211a9ef"
   vpc_security_group_ids = [aws_security_group.this.id]
+    root_block_device {
+    volume_size = 20
+  }
   lifecycle {
     prevent_destroy = true
   }
