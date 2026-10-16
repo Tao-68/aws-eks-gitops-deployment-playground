@@ -1,0 +1,14 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/app
+- name: Install Docker
+  ansible.builtin.apt:
+    name:
+      - docker.io
+    state: present
+
+- name: Start and enable the Docker service
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
