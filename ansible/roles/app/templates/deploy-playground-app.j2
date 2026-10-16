@@ -1,28 +1,51 @@
 #!/bin/bash
 set -euo pipefail
 
-commit="${1:-}"
-if [[ ! "$commit" =~ ^[0-9a-f]{40}$ ]]; then
-  echo "usage: deploy-playground-app <40-character commit id>" >&2
+image="${1:-}"
+if [[ ! "$image" =~ ^ghcr\.io/tao-68/playground-app:[0-9a-f]{40}$ ]]; then
+  echo "usage: deploy-playground-app ghcr.io/tao-68/playground-app:<commit id> [--settings-from-stdin]" >&2
   exit 1
 fi
 
-cd {{ app_root }}
-runuser -u {{ app_user }} -- git fetch --quiet origin
-runuser -u {{ app_user }} -- git checkout --quiet --detach "$commit"
+settings=/etc/playground-app/app.env
 
-cd {{ app_dir }}
-runuser -u {{ app_user }} -- npm ci --omit=dev --silent
+if [[ "${2:-}" == "--settings-from-stdin" ]]; then
+  umask 077
+  incoming=$(mktemp)
+  grep -E '^(SECRET_MESSAGE|USERNAME|PASSWORD)=.+$' > "$incoming" || true
+  for key in SECRET_MESSAGE USERNAME PASSWORD; do
+    if ! grep -q "^$key=" "$incoming"; then
+      rm -f "$incoming"
+      echo "missing $key on standard input" >&2
+      exit 1
+    fi
+  done
+  mv "$incoming" "$settings"
+elif [[ -n "${2:-}" ]]; then
+  echo "unknown option: $2" >&2
+  exit 1
+fi
 
-systemctl restart playground-app
+if [[ ! -s "$settings" ]]; then
+  echo "no settings in $settings" >&2
+  exit 1
+fi
+
+docker pull --quiet "$image"
+docker rm --force playground-app > /dev/null 2>&1 || true
+docker run --detach --name playground-app --restart unless-stopped \
+  --publish 127.0.0.1:{{ app_port }}:3000 \
+  --env-file "$settings" \
+  "$image" > /dev/null
 
 for attempt in 1 2 3 4 5; do
-  if curl -fsS http://127.0.0.1:{{ app_port }}/health > /dev/null; then
-    echo "deployed $commit"
+  if curl -fs http://127.0.0.1:{{ app_port }}/health > /dev/null; then
+    echo "deployed $image"
     exit 0
   fi
   sleep 2
 done
 
-echo "health check failed after deploying $commit" >&2
+echo "health check failed after deploying $image" >&2
+docker logs --tail 20 playground-app >&2
 exit 1
