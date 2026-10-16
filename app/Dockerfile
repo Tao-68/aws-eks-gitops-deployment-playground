@@ -1,5 +1,7 @@
 FROM node:22-alpine
 
+LABEL org.opencontainers.image.source="https://github.com/Tao-68/aws-eks-gitops-deployment-playground"
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./
