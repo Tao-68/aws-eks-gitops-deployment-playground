@@ -18,69 +18,121 @@
 #     group: www-data
 #     mode: '0755'
 
-- name: Install Node.js and npm
+# Removed to introduce Docker-based deployment
+# - name: Install Node.js and npm
+#   ansible.builtin.apt:
+#     name:
+#       - nodejs
+#       - npm
+#     state: present
+
+# - name: Create the app account
+#   ansible.builtin.user:
+#     name: "{{ app_user }}"
+#     system: true
+#     shell: /usr/sbin/nologin
+#     home: /var/lib/{{ app_user }}
+#     create_home: true
+
+# - name: Create the app folder
+#   ansible.builtin.file:
+#     path: "{{ app_root }}"
+#     state: directory
+#     owner: "{{ app_user }}"
+#     group: "{{ app_user }}"
+#     mode: '0755'
+
+# - name: Get the code from GitHub
+#   ansible.builtin.git:
+#     repo: "{{ app_repo }}"
+#     dest: "{{ app_root }}"
+#     version: "{{ app_version }}"
+#   become_user: "{{ app_user }}"
+#   register: app_clone
+#   notify: Restart app
+
+# - name: Check whether dependencies are installed
+#   ansible.builtin.stat:
+#     path: "{{ app_dir }}/node_modules"
+#   register: app_modules
+
+# - name: Install dependencies
+#   ansible.builtin.command: npm ci --omit=dev
+#   args:
+#     chdir: "{{ app_dir }}"
+#   become_user: "{{ app_user }}"
+#   when: app_clone.changed or not app_modules.stat.exists
+#   notify: Restart app
+
+# - name: Deploy the unit file for the app
+#   ansible.builtin.template:
+#     src: playground-app.service.j2
+#     dest: /etc/systemd/system/playground-app.service
+#     mode: '0644'
+#   notify: Restart app
+
+# - name: Start and enable the app service
+#   ansible.builtin.systemd:
+#     name: playground-app
+#     state: started
+#     enabled: true
+#     daemon_reload: true
+
+# - name: Remove old static site files
+#   ansible.builtin.file:
+#     path: /var/www/static-site
+#     state: absent
+
+# Clean up the systemd-based setup, replaced by the container
+- name: Check whether the old unit file exists
+  ansible.builtin.stat:
+    path: /etc/systemd/system/playground-app.service
+  register: old_unit
+
+- name: Stop and disable the old service
+  ansible.builtin.systemd:
+    name: playground-app
+    state: stopped
+    enabled: false
+  when: old_unit.stat.exists
+
+- name: Remove the old unit file
+  ansible.builtin.file:
+    path: /etc/systemd/system/playground-app.service
+    state: absent
+  register: old_unit_removed
+
+- name: Make systemd forget the old service
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: old_unit_removed.changed
+
+- name: Remove the old code
+  ansible.builtin.file:
+    path: /opt/playground
+    state: absent
+
+- name: Remove the old app account
+  ansible.builtin.user:
+    name: nodeapp
+    state: absent
+    remove: true
+
+- name: Remove Node.js and npm from the server
   ansible.builtin.apt:
     name:
       - nodejs
       - npm
-    state: present
-
-- name: Create the app account
-  ansible.builtin.user:
-    name: "{{ app_user }}"
-    system: true
-    shell: /usr/sbin/nologin
-    home: /var/lib/{{ app_user }}
-    create_home: true
-
-- name: Create the app folder
-  ansible.builtin.file:
-    path: "{{ app_root }}"
-    state: directory
-    owner: "{{ app_user }}"
-    group: "{{ app_user }}"
-    mode: '0755'
-
-- name: Get the code from GitHub
-  ansible.builtin.git:
-    repo: "{{ app_repo }}"
-    dest: "{{ app_root }}"
-    version: "{{ app_version }}"
-  become_user: "{{ app_user }}"
-  register: app_clone
-  notify: Restart app
-
-- name: Check whether dependencies are installed
-  ansible.builtin.stat:
-    path: "{{ app_dir }}/node_modules"
-  register: app_modules
-
-- name: Install dependencies
-  ansible.builtin.command: npm ci --omit=dev
-  args:
-    chdir: "{{ app_dir }}"
-  become_user: "{{ app_user }}"
-  when: app_clone.changed or not app_modules.stat.exists
-  notify: Restart app
-
-- name: Deploy the unit file for the app
-  ansible.builtin.template:
-    src: playground-app.service.j2
-    dest: /etc/systemd/system/playground-app.service
-    mode: '0644'
-  notify: Restart app
-
-- name: Start and enable the app service
-  ansible.builtin.systemd:
-    name: playground-app
-    state: started
-    enabled: true
-    daemon_reload: true
-
-- name: Remove old static site files
-  ansible.builtin.file:
-    path: /var/www/static-site
     state: absent
+
+# The container's settings
+- name: Create the settings folder
+  ansible.builtin.file:
+    path: /etc/playground-app
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
 
 # Github Actions Deployment
 - name: Create the deploy account
@@ -111,4 +163,3 @@
     group: root
     mode: '0440'
     validate: /usr/sbin/visudo -c -f %s
-
