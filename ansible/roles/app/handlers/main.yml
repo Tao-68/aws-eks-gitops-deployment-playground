@@ -1,5 +1,6 @@
-- name: Restart app
-  ansible.builtin.systemd:
-    name: "playground-app"
-    state: restarted
-    daemon_reload: yes
+# Removed to introduce Docker-based deployment
+# - name: Restart app
+#   ansible.builtin.systemd:
+#     name: "playground-app"
+#     state: restarted
+#     daemon_reload: yes
