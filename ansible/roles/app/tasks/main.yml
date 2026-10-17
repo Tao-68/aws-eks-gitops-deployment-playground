@@ -107,10 +107,10 @@
     daemon_reload: true
   when: old_unit_removed.changed
 
-- name: Remove the old code
-  ansible.builtin.file:
-    path: /opt/playground
-    state: absent
+# - name: Remove the old code
+#   ansible.builtin.file:
+#     path: /opt/playground
+#     state: absent
 
 - name: Remove the old app account
   ansible.builtin.user:
@@ -163,3 +163,28 @@
     group: root
     mode: '0440'
     validate: /usr/sbin/visudo -c -f %s
+
+# Deploy docker compose
+- name: Create compose folder
+  ansible.builtin.file:
+    path: /etc/playground
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Deploy docker compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: /etc/playground/compose.yaml
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Deploy MongoDB init script
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../mongo/init-todo-user.js"
+    dest: /etc/playground/init-todo-user.js
+    owner: root
+    group: root
+    mode: '0644'
