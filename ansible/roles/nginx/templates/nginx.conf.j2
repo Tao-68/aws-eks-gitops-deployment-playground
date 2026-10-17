@@ -8,4 +8,11 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
+
+    location /todos {
+        proxy_pass http://127.0.0.1:{{ todo_api_port }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
 }
