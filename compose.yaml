@@ -1,0 +1,42 @@
+name: playground
+
+services:
+  playground-app:
+    build: ./app
+    env_file: app/.env
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+
+  todo-api:
+    build: ./todo-api
+    environment:
+      MONGODB_URI: mongodb://${TODO_DB_USER:?}:${TODO_DB_PASSWORD:?}@mongo:27017/todos
+    ports:
+      - "127.0.0.1:3001:3001"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:8
+    command: ["--wiredTigerCacheSizeGB", "0.25"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?}
+      TODO_DB_USER: ${TODO_DB_USER:?}
+      TODO_DB_PASSWORD: ${TODO_DB_PASSWORD:?}
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo/init-todo-user.js:/docker-entrypoint-initdb.d/init-todo-user.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
