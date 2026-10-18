@@ -1,10 +1,11 @@
-name: Deploy app
+name: Deploy stack
 
 on:
   push:
     branches: [main]
     paths:
       - "app/**"
+      - "todo-api/**"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
@@ -22,7 +23,9 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image: ${{ steps.push.outputs.image }}
+      app_image: ${{ steps.push.outputs.app_image }}
+      todo_image: ${{ steps.push.outputs.todo_image }}
+
     steps:
       - name: Get the code
         uses: actions/checkout@v4
@@ -37,6 +40,19 @@ jobs:
           docker build -t "$image" app
           docker push "$image"
           echo "image=$image" >> "$GITHUB_OUTPUT"
+            - name: Build and push the images
+        id: push
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          app_image="ghcr.io/$owner/playground-app:$GITHUB_SHA"
+          todo_image="ghcr.io/$owner/todo-api:$GITHUB_SHA"
+          docker build -t "$app_image" app
+          docker build -t "$todo_image" todo-api
+          docker push "$app_image"
+          docker push "$todo_image"
+          echo "app_image=$app_image" >> "$GITHUB_OUTPUT"
+          echo "todo_image=$todo_image" >> "$GITHUB_OUTPUT"
+
 
   deploy:
     runs-on: ubuntu-latest
@@ -79,16 +95,22 @@ jobs:
 
       - name: Deploy
         env:
-          IMAGE: ${{ needs.build.outputs.image }}
+          APP_IMAGE: ${{ needs.build.outputs.app_image }}
+          TODO_IMAGE: ${{ needs.build.outputs.todo_image }}
           SECRET_MESSAGE: ${{ secrets.SECRET_MESSAGE }}
           APP_USERNAME: ${{ secrets.APP_USERNAME }}
           APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+          MONGO_ROOT_USERNAME: ${{ secrets.MONGO_ROOT_USERNAME }}
+          MONGO_ROOT_PASSWORD: ${{ secrets.MONGO_ROOT_PASSWORD }}
+          TODO_DB_USER: ${{ secrets.TODO_DB_USER }}
+          TODO_DB_PASSWORD: ${{ secrets.TODO_DB_PASSWORD }}
         run: |
-          printf 'SECRET_MESSAGE=%s\nUSERNAME=%s\nPASSWORD=%s\n' \
-            "$SECRET_MESSAGE" "$APP_USERNAME" "$APP_PASSWORD" |
+          printf 'APP_SECRET_MESSAGE=%s\nAPP_USERNAME=%s\nAPP_PASSWORD=%s\nMONGO_ROOT_USERNAME=%s\nMONGO_ROOT_PASSWORD=%s\nTODO_DB_USER=%s\nTODO_DB_PASSWORD=%s\n' \
+            "$SECRET_MESSAGE" "$APP_USERNAME" "$APP_PASSWORD" \
+            "$MONGO_ROOT_USERNAME" "$MONGO_ROOT_PASSWORD" "$TODO_DB_USER" "$TODO_DB_PASSWORD" |
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             deploy@${{ vars.APP_HOST }} \
-            "sudo /usr/local/bin/deploy-playground-app $IMAGE --settings-from-stdin"
+            "sudo /usr/local/bin/deploy-playground-app $APP_IMAGE $TODO_IMAGE --settings-from-stdin"
 
       - name: Disconnect from the VPN
         if: always()
