@@ -36,13 +36,6 @@ jobs:
       - name: Build and push the image
         id: push
         run: |
-          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/playground-app:${GITHUB_SHA}"
-          docker build -t "$image" app
-          docker push "$image"
-          echo "image=$image" >> "$GITHUB_OUTPUT"
-            - name: Build and push the images
-        id: push
-        run: |
           owner="${GITHUB_REPOSITORY_OWNER,,}"
           app_image="ghcr.io/$owner/playground-app:$GITHUB_SHA"
           todo_image="ghcr.io/$owner/todo-api:$GITHUB_SHA"
