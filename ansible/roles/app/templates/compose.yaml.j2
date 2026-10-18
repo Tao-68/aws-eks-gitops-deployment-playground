@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
 
   mongo:
-    image: mongo:8
+    image: mongo:7.0
     command: ["--wiredTigerCacheSizeGB", "0.25"]
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?}
