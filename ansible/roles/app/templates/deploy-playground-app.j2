@@ -1,51 +1,76 @@
 #!/bin/bash
 set -euo pipefail
 
-image="${1:-}"
-if [[ ! "$image" =~ ^ghcr\.io/tao-68/playground-app:[0-9a-f]{40}$ ]]; then
-  echo "usage: deploy-playground-app ghcr.io/tao-68/playground-app:<commit id> [--settings-from-stdin]" >&2
+app_image="${1:-}"
+todo_image="${2:-}"
+if [[ ! "$app_image" =~ ^ghcr\.io/tao-68/playground-app:[0-9a-f]{40}$ ]] ||
+   [[ ! "$todo_image" =~ ^ghcr\.io/tao-68/todo-api:[0-9a-f]{40}$ ]]; then
+  echo "usage: deploy-playground-app <playground-app image> <todo-api image> [--settings-from-stdin]" >&2
   exit 1
 fi
 
-settings=/etc/playground-app/app.env
+cd /etc/playground
+umask 077
+keys=(APP_SECRET_MESSAGE APP_USERNAME APP_PASSWORD MONGO_ROOT_USERNAME MONGO_ROOT_PASSWORD TODO_DB_USER TODO_DB_PASSWORD)
 
-if [[ "${2:-}" == "--settings-from-stdin" ]]; then
-  umask 077
-  incoming=$(mktemp)
-  grep -E '^(SECRET_MESSAGE|USERNAME|PASSWORD)=.+$' > "$incoming" || true
-  for key in SECRET_MESSAGE USERNAME PASSWORD; do
+if [[ "${3:-}" == "--settings-from-stdin" ]]; then
+  incoming=$(mktemp ./secrets.XXXXXX)
+  pattern="^($(IFS='|'; echo "${keys[*]}"))=.+$"
+  grep -E "$pattern" > "$incoming" || true
+  for key in "${keys[@]}"; do
     if ! grep -q "^$key=" "$incoming"; then
       rm -f "$incoming"
       echo "missing $key on standard input" >&2
       exit 1
     fi
   done
-  mv "$incoming" "$settings"
-elif [[ -n "${2:-}" ]]; then
-  echo "unknown option: $2" >&2
+  mv "$incoming" secrets.env
+elif [[ -n "${3:-}" ]]; then
+  echo "unknown option: $3" >&2
   exit 1
 fi
 
-if [[ ! -s "$settings" ]]; then
-  echo "no settings in $settings" >&2
+if [[ ! -s secrets.env ]]; then
+  echo "no settings in /etc/playground/secrets.env" >&2
   exit 1
 fi
 
-docker pull --quiet "$image"
+{
+  cat secrets.env
+  printf 'PLAYGROUND_APP_IMAGE=%s\nTODO_API_IMAGE=%s\n' "$app_image" "$todo_image"
+} > .env.new
+mv .env.new .env
+
+show_failure() {
+  docker compose ps >&2
+  docker compose logs --tail 20 >&2
+}
+
+docker compose pull --quiet
+
+# The container started by the previous deploy command still holds port {{ app_port }}
 docker rm --force playground-app > /dev/null 2>&1 || true
-docker run --detach --name playground-app --restart unless-stopped \
-  --publish 127.0.0.1:{{ app_port }}:3000 \
-  --env-file "$settings" \
-  "$image" > /dev/null
 
-for attempt in 1 2 3 4 5; do
-  if curl -fs http://127.0.0.1:{{ app_port }}/health > /dev/null; then
-    echo "deployed $image"
-    exit 0
+if ! docker compose up --detach --remove-orphans --wait --wait-timeout 120; then
+  echo "the stack did not start" >&2
+  show_failure
+  exit 1
+fi
+
+for port in {{ app_port }} {{ todo_api_port }}; do
+  healthy=false
+  for attempt in 1 2 3 4 5; do
+    if curl -fs "http://127.0.0.1:$port/health" > /dev/null; then
+      healthy=true
+      break
+    fi
+    sleep 2
+  done
+  if [[ "$healthy" != true ]]; then
+    echo "health check failed on port $port" >&2
+    show_failure
+    exit 1
   fi
-  sleep 2
 done
 
-echo "health check failed after deploying $image" >&2
-docker logs --tail 20 playground-app >&2
-exit 1
+echo "deployed $app_image and $todo_image"
