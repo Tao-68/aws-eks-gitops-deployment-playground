@@ -125,14 +125,14 @@
       - npm
     state: absent
 
-# The container's settings
-- name: Create the settings folder
+# Settings folder from the docker run setup, replaced by /etc/playground
+- name: Remove the settings folder
   ansible.builtin.file:
     path: /etc/playground-app
-    state: directory
-    owner: root
-    group: root
-    mode: '0700'
+    state: absent
+    # owner: root
+    # group: root
+    # mode: '0700'
 
 # Github Actions Deployment
 - name: Create the deploy account
